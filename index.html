@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🌟🌟直式乘法計數機</title>
+<title>直式乘法計數機⭐⭐版</title>
 <style>
 body{font-family:sans-serif;background:#eef2ff;margin:0;padding:16px;color:#1e293b;touch-action:manipulation}
 .box{max-width:900px;margin:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,.1);position:relative}
@@ -61,7 +61,7 @@ tr.hl td{background:#fef9c3;font-weight:bold}
 <button id="tabCalc" onclick="setMode('calc')">練習</button>
 <button id="tabExam" class="ghost" onclick="setMode('exam')">測驗</button>
 </div>
-<h1 id="title">直式乘法計數機</h1>
+<h1 id="title">直式乘法計數機⭐⭐版</h1>
 <div id="calcControls">
 <div class="row">
 <label>被乘數 <input type="number" id="dividend" value="345" min="0" max="9999" step="any"></label>
@@ -103,8 +103,8 @@ function setMode(m){
   document.getElementById('tabExam').className=m==='exam'?'':'ghost';
   document.getElementById('calcControls').style.display=m==='calc'?'':'none';
   document.getElementById('examControls').style.display=m==='exam'?'':'none';
-  document.getElementById('title').textContent=m==='calc'?'🌟🌟直式乘法計數機':'直式乘法測驗 ⭐星星版';
-  document.title=m==='calc'?'🌟🌟直式乘法計數機':'直式乘法測驗 ⭐星星版';
+  document.getElementById('title').textContent=m==='calc'?'直式乘法計數機⭐⭐版':'直式乘法測驗 ⭐星星版';
+  document.title=m==='calc'?'直式乘法計數機⭐⭐版':'直式乘法測驗 ⭐星星版';
   cells=[];document.getElementById('grid').innerHTML='';
   document.getElementById('mwrap').classList.remove('show');
   document.getElementById('nextBtn').classList.remove('show');
