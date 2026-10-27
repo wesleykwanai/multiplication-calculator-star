@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>直式乘法計數機 ⭐星星版</title>
+<style>
+body{font-family:sans-serif;background:#eef2ff;margin:0;padding:16px;color:#1e293b;touch-action:manipulation}
+.box{max-width:900px;margin:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,.1);position:relative}
+.tabs{position:absolute;top:14px;right:14px;display:flex;gap:6px}
+.tabs button{padding:6px 14px;font-size:1rem}
+h1{text-align:center;color:#312e81}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0;align-items:center}
+input[type=number]{font-size:1.2rem;padding:8px;width:140px;text-align:center;border:2px solid #c7d2fe;border-radius:8px}
+select{font-size:1.1rem;padding:6px;border:2px solid #c7d2fe;border-radius:8px}
+button{font-size:1.1rem;padding:8px 20px;border-radius:10px;border:none;background:#4f46e5;color:#fff;cursor:pointer;font-weight:bold}
+button.ghost{background:#e0e7ff;color:#3730a3}
+button:disabled{background:#cbd5e1;cursor:default}
+#mwrap{display:none;margin-top:10px;text-align:center}
+#mwrap.show{display:block}
+#mwrap table{margin:6px auto;font-size:1.5rem}
+#mwrap td{padding:8px 18px;font-size:1.5rem}
+#suggest{font-size:1.2rem;font-weight:bold;color:#92400e;background:#fef9c3;border-radius:8px;padding:8px;margin-top:6px}
+#grid{display:grid;gap:0;font-family:monospace;font-size:1.6rem;margin:20px auto;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+#grid::-webkit-scrollbar{display:none}
+.cell{width:40px;height:50px;display:flex;align-items:center;justify-content:center;position:relative}
+.top{border-top:2px solid #0f172a}
+.uline{border-bottom:2px solid #334155}
+.digit{width:32px;height:40px;text-align:center;font-size:1.5rem;border-radius:6px;border:1px solid #cbd5e1;background:#fff;outline:none;font-family:monospace}
+.digit.ok{color:#15803d;background:#f0fdf4;border-color:#bbf7d0;font-weight:bold}
+.digit.bad{color:#dc2626;background:#fef2f2;border-color:#fecaca}
+.digit:disabled{background:#fff;opacity:1}
+.hint{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+table{border-collapse:collapse}
+td{border:1px solid #e2e8f0;padding:4px 10px;font-family:monospace}
+tr.hl td{background:#fef9c3;font-weight:bold}
+.msg{text-align:center;font-weight:bold;min-height:1.5em}
+.scorebar{display:flex;gap:12px;justify-content:center;font-weight:bold}
+.pill{background:#e0e7ff;border-radius:999px;padding:4px 16px}
+#nextBtn{display:none}
+#nextBtn.show{display:inline-block;animation:bounce .8s infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+.okmsg{color:#16a34a}.err{color:#dc2626}
+.crow{height:6px}
+.arow{height:16px}
+.carry{position:relative;left:22px;top:-1px;width:16px;height:16px;padding:0;text-align:center;font-size:0.75rem;line-height:16px;border-radius:4px;border:1px dashed #f59e0b;background:#fffbeb;outline:none;font-family:monospace;color:#92400e;font-weight:bold}
+.carry.ok{color:#15803d;background:#f0fdf4;border-color:#bbf7d0}
+.carry.bad{color:#dc2626;background:#fef2f2;border-color:#fecaca}
+.carry:disabled{background:#fffbeb;opacity:1}
+.pop{animation:pop .45s ease}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+.hasguest{position:relative}
+.guestspace{width:16px;height:16px}
+.carry.inhost{position:absolute;left:-8px;top:auto;bottom:0}
+</style>
+</head>
+<body>
+<div class="box">
+<div class="tabs">
+<button id="tabCalc" onclick="setMode('calc')">練習</button>
+<button id="tabExam" class="ghost" onclick="setMode('exam')">測驗</button>
+</div>
+<h1 id="title">直式乘法計數機</h1>
+<div id="calcControls">
+<div class="row">
+<label>被乘數 <input type="number" id="dividend" value="345" min="0" max="9999" step="any"></label>
+<label>乘數 <input type="number" id="divisor" value="23" min="1" max="99" step="1"></label>
+</div>
+<div class="row">
+<button onclick="make()">產生直式</button>
+<button onclick="showHint()">提示</button>
+<button class="ghost" onclick="fillAns()">顯示答案</button>
+<button class="ghost" onclick="clearVal()">重做</button>
+</div>
+</div>
+<div id="examControls" style="display:none">
+<div class="row">
+<label>被乘數 <select id="dDigits"><option value="2">2位</option><option value="3" selected>3位</option><option value="4">4位</option></select></label>
+<label>乘數 <select id="vDigits"><option value="1" selected>1位</option><option value="2">2位</option></select></label>
+<label>題數 <select id="qNum"><option value="5" selected>5題</option><option value="10">10題</option><option value="20">20題</option></select></label>
+<button onclick="startExam()">開始測驗</button>
+</div>
+<div class="scorebar"><span class="pill" id="qpill">未開始</span><span class="pill" id="spill">分數 0</span></div>
+<div class="row">
+<button onclick="showHint()">提示</button>
+<button id="nextBtn" onclick="nextQ()">下一題 →</button>
+<button class="ghost" onclick="startExam()">重新出卷</button>
+</div>
+</div>
+<div class="msg" id="msg">輸入數字後按「產生直式」</div>
+<div class="hint">
+<div id="grid"></div>
+<div><div id="mwrap"><b id="mtitle"></b><table id="mtab"></table><div id="suggest"></div></div></div>
+</div>
+</div>
+<script>
+var cells=[],curTotal=0,curDv=0,curDs=0,curFinal='';
+var mode='calc',qIdx=0,qTotal=0,score=0,locked=false;
+function setMode(m){
+  mode=m;
+  document.getElementById('tabCalc').className=m==='calc'?'':'ghost';
+  document.getElementById('tabExam').className=m==='exam'?'':'ghost';
+  document.getElementById('calcControls').style.display=m==='calc'?'':'none';
+  document.getElementById('examControls').style.display=m==='exam'?'':'none';
+  document.getElementById('title').textContent=m==='calc'?'直式乘法計數機 ⭐星星版':'直式乘法測驗 ⭐星星版';
+  document.title=m==='calc'?'直式乘法計數機 ⭐星星版':'直式乘法測驗 ⭐星星版';
+  cells=[];document.getElementById('grid').innerHTML='';
+  document.getElementById('mwrap').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  var msg=document.getElementById('msg');
+  if(m==='calc'){make();}
+  else{qIdx=0;qTotal=0;score=0;locked=false;updBar();msg.textContent='揀好設定，按「開始測驗」隨機出題';msg.className='msg';}
+}
+function prodStr(a,b){
+  var rawA=String(a),dec=(rawA.split('.')[1]||'').length;
+  var f=parseInt(rawA.replace('.',''),10)*parseInt(b,10),s=String(f);
+  if(dec>0){while(s.length<=dec)s='0'+s;s=s.slice(0,s.length-dec)+'.'+s.slice(s.length-dec);s=s.replace(/^0+(?=\d)/,'');}
+  return s;
+}
+function gen(dividend,divisor){
+  var rawA=String(dividend),rawB=String(divisor);
+  var decA=(rawA.split('.')[1]||'').length;
+  var sA=rawA.replace('.',''),sB=rawB;
+  var partials=sB.split('').map(function(ch){return String(parseInt(sA,10)*parseInt(ch,10));});
+  curFinal=prodStr(dividend,divisor);
+  var single=sB.length===1;
+  var maxLen=Math.max(rawA.length,rawB.length+1,curFinal.length);
+  partials.forEach(function(p,i){maxLen=Math.max(maxLen,p.length+(sB.length-1-i));});
+  var total=maxLen+1,R=total-1;
+  cells=[];var n=0,r=0,i,j;
+  function putStr(str,row,rightEdge,g,ul,top,orderRTL){
+    var start=rightEdge-str.length+1;
+    var idxs=[];
+    for(i=0;i<str.length;i++){
+      var ch=str[i],id=g+'-'+row+'-'+(start+i);
+      if(ch==='.'){cells.push({id:id,row:row,col:start+i,value:'.',exp:'.',in:false});}
+      else if(g==='s'){cells.push({id:id,row:row,col:start+i,value:ch,exp:ch,in:false,ul:ul?1:0,top:top?1:0});}
+      else{cells.push({id:id,row:row,col:start+i,value:'',exp:ch,in:true,g:g,ul:ul?1:0,top:top?1:0});idxs.push(id);}
+    }
+    if(orderRTL){idxs.reverse();}
+    idxs.forEach(function(id){var c=cells.find(function(x){return x.id===id;});if(c)c.ord=n++;});
+  }
+  putStr(rawA,0,R,'s',0,0,false);
+  var rbStart=R-rawB.length+1;
+  var multRow=1;
+  var topStart=R-rawA.length+1,timesCol=Math.min(rbStart-1,topStart-1);
+  cells.push({id:'times',row:multRow,col:timesCol,value:'×',exp:'×',in:false,ul:1});
+  for(var fc=timesCol+1;fc<rbStart;fc++)cells.push({id:'pad'+fc,row:multRow,col:fc,value:'',exp:'',in:false,ul:1});
+  for(i=0;i<rawB.length;i++)cells.push({id:'mb'+i,row:multRow,col:rbStart+i,value:rawB[i],exp:rawB[i],in:false,ul:1});
+  r=multRow+1;
+  partials.forEach(function(p,k){
+    var d=+sB[k],shift=sB.length-1-k;
+    var carry=0,notes=[];
+    for(var t=0;t<sA.length;t++){
+      var cin=carry,dg=+sA[sA.length-1-t],s=d*dg+cin,w=s%10,cOut=(s-w)/10;
+      if(t<sA.length-1&&cOut>0)notes.push({t:t,col:R-shift-t-1,val:String(cOut),
+        tip:'提示：記數，'+d+'×'+dg+(cin>0?'+'+cin:'')+'='+s+'，進位 '+cOut+'（細字記喺上面）'});
+      carry=cOut;
+    }
+    if(k===0){
+      putStr(p+new Array(shift+1).join('0'),r,R,'p'+k,single?1:0,0,true);
+      var prow0=r;r++;
+      notes.forEach(function(nt){
+        cells.push({id:'n'+k+'-'+nt.t,row:multRow,col:nt.col,value:'',exp:nt.val,in:true,g:'n'+k,carry:true,hide:true,pop:false,tip:nt.tip,ord:0,host:'mb0'});
+      });
+      cells.forEach(function(c){
+        if(c.host&&!c.ord){
+          var tgt=cells.find(function(x){return x.in&&!x.carry&&x.row===prow0&&x.col===c.col;});
+          if(tgt)c.ord=tgt.ord-0.5;
+        }
+      });
+    }else{
+      var noteRow=r,partRow=r+1;
+      putStr(p+new Array(shift+1).join('0'),partRow,R,'p'+k,single?1:0,0,true);
+      notes.forEach(function(nt){
+        var below=cells.find(function(x){return x.in&&!x.carry&&x.row===partRow&&x.col===nt.col;});
+        cells.push({id:'n'+k+'-'+nt.t,row:noteRow,col:nt.col,value:'',exp:nt.val,in:true,g:'n'+k,carry:true,hide:true,pop:false,tip:nt.tip,ord:(below?below.ord-0.5:n++)});
+      });
+      r+=2;
+    }
+  });
+  if(!single){
+    var pfull=partials.map(function(p,k){return p+new Array((sB.length-1-k)+1).join('0');});
+    var maxP=Math.max.apply(null,pfull.map(function(s){return s.length;}));
+    var addNotes=[],carryA=0;
+    for(var cp=0;cp<maxP;cp++){
+      var colsum=carryA;
+      pfull.forEach(function(ps){var ch=ps[ps.length-1-cp];if(ch)colsum+=+ch;});
+      var cA=Math.floor(colsum/10);
+      if(cp<maxP-1&&cA>0)addNotes.push({col:R-cp-1,val:String(cA),
+        tip:'提示：記數，直加呢一列 = '+colsum+'，進位 '+cA+'（細字記喺上面）'});
+      carryA=cA;
+    }
+    var aRow=r,fRow=r+(addNotes.length?1:0);
+    putStr(curFinal,fRow,R,'f',0,1,true);
+    addNotes.forEach(function(nt,ni){
+      var below2=cells.find(function(x){return x.in&&!x.carry&&x.row===fRow&&x.col===nt.col;});
+      cells.push({id:'na-'+ni,row:aRow,col:nt.col,value:'',exp:nt.val,in:true,g:'na',carry:true,hide:true,pop:false,tip:nt.tip,ord:(below2?below2.ord-0.5:n++)});
+    });
+    r=fRow+1;
+  }else{
+    putStr(curFinal,r,R,'f',0,1,true);
+    r++;
+  }
+  return total;
+}
+function activeId(){
+  var ins=cells.filter(function(c){return c.in&&!c.hide&&c.value!==c.exp;}).sort(function(a,b){return a.ord-b.ord;});
+  return ins.length?ins[0].id:null;
+}
+function buildInput(c){
+  var inp=document.createElement('input');
+  inp.inputMode='numeric';
+  inp.className=c.carry?'carry':'digit';
+  if(c.host)inp.classList.add('inhost');
+  inp.maxLength=1;inp.value=c.value;inp.dataset.id=c.id;
+  if(c.carry&&c.pop){inp.classList.add('pop');c.pop=false;}
+  if(mode==='exam'&&locked)inp.disabled=true;
+  var ok=c.value!==''&&c.value===c.exp,bad=c.value!==''&&c.value!==c.exp;
+  if(ok)inp.classList.add('ok');if(bad)inp.classList.add('bad');
+  inp.oninput=function(e){var v=e.target.value;if(!/^\d?$/.test(v)){e.target.value='';return;}c.value=v;check(curTotal,curDv,curDs);};
+  inp.onfocus=function(){
+    var found=false;
+    cells.forEach(function(x){if(x.carry&&x.hide&&x.row===c.row-1&&x.col===c.col-1){x.hide=false;x.pop=true;if(mode==='calc')x.value=x.exp;found=true;}});
+    if(found){render(curTotal,curDv,curDs);
+      if(document.querySelector){var el=document.querySelector('input[data-id="'+c.id+'"]');if(el)el.focus({preventScroll:true});}
+    }
+  };
+  return inp;
+}
+function render(total,dv,ds){
+  var g=document.getElementById('grid');g.innerHTML='';
+  g.style.gridTemplateColumns='repeat('+total+',40px)';
+  cells.forEach(function(c){
+    if(c.host)return;
+    var d=document.createElement('div');
+    d.className='cell'+(c.top?' top':'')+(c.ul?' uline':'')+(c.carry?' crow':'')+(c.g==='na'?' arow':'');
+    d.style.gridColumn=(c.col+1);d.style.gridRow=(c.row+1);
+    if(c.in&&!c.hide){
+      d.appendChild(buildInput(c));
+    }else if(!c.in){
+      var guests=cells.filter(function(x){return x.host===c.id;});
+      if(!guests.length){d.textContent=c.value;}
+      else{
+        d.classList.add('hasguest');
+        d.textContent=c.value;
+        guests.forEach(function(x){ if(!x.hide)d.appendChild(buildInput(x)); });
+      }
+    }
+    g.appendChild(d);
+  });
+  document.getElementById('mtitle').textContent=ds+' 的乘法表';
+  var h='';for(var i=1;i<=9;i++)h+='<tr><td>'+ds+'×'+i+'</td><td>=</td><td>'+(ds*i)+'</td></tr>';
+  document.getElementById('mtab').innerHTML=h;
+}
+function showHint(){
+  var ds=curDs,act=cells.find(function(c){return c.id===activeId();});
+  var tip=document.getElementById('suggest'),h='',d=null,mt='',pIdx=-1;
+  if(act){
+    var m=act.g.match(/^(?:p(\d+))$/);
+    if(m){pIdx=+m[1];d=String(curDs)[pIdx];mt=d+' 的乘法表';}
+  }
+  if(act&&act.carry){
+    document.getElementById('mtitle').textContent='記數（細字）';
+    document.getElementById('mtab').innerHTML='';
+    tip.textContent=act.tip;
+    document.getElementById('mwrap').classList.add('show');
+    return;
+  }
+  if(d!==null){
+    for(var i=1;i<=9;i++)h+='<tr class="'+(i===+d?'hl':'')+'"><td>'+d+'×'+i+'</td><td>=</td><td>'+(d*i)+'</td></tr>';
+    document.getElementById('mtitle').textContent=mt;
+    document.getElementById('mtab').innerHTML=h;
+    var sh=String(curDs).length-1-pIdx;
+    tip.textContent=sh>0
+      ? '提示：呢行係 '+String(curDv)+' × '+d+'（高位），先喺個位補 '+sh+' 個 0，再由個位起逐格填（小數點最後先點返）'
+      : '提示：呢行係 '+String(curDv)+' × '+d+'，由個位開始逐格填（小數點最後先點返）';
+  }else{
+    document.getElementById('mtitle').textContent='直式加法';
+    document.getElementById('mtab').innerHTML='';
+    tip.textContent='提示：將上面各行由個位開始加埋，小數點對返齊被乘數';
+  }
+  document.getElementById('mwrap').classList.add('show');
+}
+function tryAutoBring(){return false;}
+function check(total,dv,ds){
+  if(mode==='exam'&&locked)return;
+  cells.forEach(function(c){
+    if(c.carry&&c.hide){
+      var src=cells.find(function(x){return x.in&&!x.carry&&x.row===c.row+1&&x.col===c.col+1;});
+      if(src&&src.value===src.exp){c.hide=false;c.pop=true;}
+    }
+  });
+  var done=cells.every(function(c){return !c.in||c.hide||c.value===c.exp;});
+  var msg=document.getElementById('msg');
+  if(done){
+    if(mode==='calc'){
+      msg.textContent='🎉 答啱晒！'+dv+' × '+ds+' = '+curFinal;msg.className='msg okmsg';
+    }else{
+      locked=true;score+=10;updBar();
+      msg.textContent='🎉 答啱晒！'+dv+' × '+ds+' = '+curFinal+'（+10分）';
+      msg.className='msg okmsg';
+      document.getElementById('nextBtn').classList.add('show');
+      document.getElementById('nextBtn').textContent=qIdx<qTotal?'下一題 →':'查看成績';
+    }
+  }
+  render(total,dv,ds);
+}
+function fillAns(){cells.forEach(function(c){if(c.in){c.value=c.exp;c.hide=false;c.pop=false;}});render(curTotal,curDv,curDs);document.getElementById('msg').textContent='已顯示答案';document.getElementById('msg').className='msg';}
+function clearVal(){cells.forEach(function(c){if(c.in){c.value='';if(c.carry){c.hide=true;c.pop=false;}}});render(curTotal,curDv,curDs);document.getElementById('msg').textContent='';document.getElementById('msg').className='msg';}
+function make(){
+  var dv=document.getElementById('dividend').value,ds=document.getElementById('divisor').value;
+  var msg=document.getElementById('msg');
+  if(!dv||!ds||+ds<1||+dv<=0){msg.textContent='被乘數同乘數都要係正數';msg.className='msg err';return;}
+  if(!Number.isInteger(+ds)){msg.textContent='乘數只可以係整數';msg.className='msg err';return;}
+  if(!/^\d{1,4}(\.\d{1,2})?$/.test(String(dv))){msg.textContent='被乘數最多4位整數加2位小數';msg.className='msg err';return;}
+  if(+dv>9999||+ds>99){msg.textContent='暫只支援 被乘數≤9999、乘數≤99';msg.className='msg err';return;}
+  curDv=dv;curDs=ds;locked=false;
+  curTotal=gen(dv,ds);render(curTotal,dv,ds);
+  document.getElementById('mwrap').classList.remove('show');
+  msg.textContent='';msg.className='msg';
+}
+function rnd(lo,hi){return Math.floor(Math.random()*(hi-lo+1))+lo;}
+function newRandom(){
+  var dd=+document.getElementById('dDigits').value,vd=+document.getElementById('vDigits').value;
+  var dLo=Math.pow(10,dd-1),dHi=Math.pow(10,dd)-1;
+  var vLo=vd===1?2:10,vHi=vd===1?9:99;
+  var dv=rnd(dLo,dHi),ds=rnd(vLo,vHi);
+  return [dv,ds];
+}
+function startExam(){
+  qTotal=+document.getElementById('qNum').value;
+  qIdx=0;score=0;updBar();
+  nextQ();
+}
+function nextQ(){
+  if(qIdx>=qTotal){
+    document.getElementById('msg').textContent='🎉 測驗完成！總分 '+score+' / '+(qTotal*10);
+    document.getElementById('msg').className='msg okmsg';
+    document.getElementById('nextBtn').classList.remove('show');
+    return;
+  }
+  qIdx++;locked=false;
+  var pair=newRandom();curDv=pair[0];curDs=pair[1];
+  curTotal=gen(curDv,curDs);
+  document.getElementById('mwrap').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  updBar();
+  var msg=document.getElementById('msg');
+  msg.textContent='第 '+qIdx+' / '+qTotal+' 題：'+curDv+' × '+curDs;
+  msg.className='msg';
+  render(curTotal,curDv,curDs);
+}
+function updBar(){
+  document.getElementById('qpill').textContent=qTotal?('第 '+Math.min(qIdx,qTotal)+' / '+qTotal+' 題'):'未開始';
+  document.getElementById('spill').textContent='分數 '+score;
+}
+make();
+</script>
+</body>
+</html>
