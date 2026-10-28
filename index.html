@@ -159,7 +159,7 @@ function gen(dividend,divisor){
       carry=cOut;
     }
     if(k===0){
-      putStr(p+new Array(shift+1).join('0'),r,R,'p'+k,single?1:0,0,true);
+      putStr(p+new Array(shift+1).join('0'),r,R,'p'+k,0,0,true);
       var prow0=r;r++;
       notes.forEach(function(nt){
         cells.push({id:'n'+k+'-'+nt.t,row:multRow,col:nt.col,value:'',exp:nt.val,in:true,g:'n'+k,carry:true,hide:true,pop:false,tip:nt.tip,ord:0,host:'mb0'});
@@ -199,9 +199,6 @@ function gen(dividend,divisor){
       cells.push({id:'na-'+ni,row:aRow,col:nt.col,value:'',exp:nt.val,in:true,g:'na',carry:true,hide:true,pop:false,tip:nt.tip,ord:(below2?below2.ord-0.5:n++)});
     });
     r=fRow+1;
-  }else{
-    putStr(curFinal,r,R,'f',0,1,true);
-    r++;
   }
   return total;
 }
