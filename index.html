@@ -154,7 +154,7 @@ function gen(dividend,divisor){
     var carry=0,notes=[];
     for(var t=0;t<sA.length;t++){
       var cin=carry,dg=+sA[sA.length-1-t],s=d*dg+cin,w=s%10,cOut=(s-w)/10;
-      if(t<sA.length-1&&cOut>0)notes.push({t:t,col:(k===0?R-t:R-shift-t-1),val:String(cOut),
+      if(t<sA.length-1&&cOut>0)notes.push({t:t,col:(k===0?R-shift-t:R-shift-t-1),val:String(cOut),
         tip:'提示：記數，'+d+'×'+dg+(cin>0?'+'+cin:'')+'='+s+'，進位 '+cOut+'（細字記喺上面）'});
       carry=cOut;
     }
