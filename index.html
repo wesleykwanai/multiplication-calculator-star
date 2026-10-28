@@ -49,6 +49,8 @@ tr.hl td{background:#fef9c3;font-weight:bold}
 .digit,.carry{min-width:0}
 .dotmark{position:absolute;right:-5px;top:50%;transform:translateY(-50%);font-size:1.5rem;line-height:1;pointer-events:none;color:#1e293b}
 .dotmark.dlow{top:auto;bottom:3px;transform:none}
+.dotmark.go{animation:dotspark .45s ease-in-out 4}
+@keyframes dotspark{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(1.7)}}
 .carry:disabled{background:#fffbeb;opacity:1}
 .pop{animation:pop .45s ease}
 @keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
@@ -168,7 +170,7 @@ function gen(dividend,divisor){
       carry=cOut;
     }
     if(k===0){
-      putStr(p+new Array(shift+1).join('0'),r,R,'p'+k,0,0,true);
+      putStr(single?curFinal:(p+new Array(shift+1).join('0')),r,R,'p'+k,0,0,true);
       var prow0=r;r++;
       notes.forEach(function(nt){
         cells.push({id:'n'+k+'-'+nt.t,row:multRow,col:nt.col,value:'',exp:nt.val,in:true,g:'n'+k,carry:true,hide:true,pop:false,tip:nt.tip,ord:0,host:'mb0'});
@@ -209,6 +211,7 @@ function gen(dividend,divisor){
     });
     r=fRow+1;
   }
+  cells.forEach(function(c){if(c.dot&&(c.g==='f'||(single&&c.g==='p0')))c.ansDot=true;});
   return total;
 }
 function activeId(){
@@ -254,7 +257,13 @@ function render(total,dv,ds){
         guests.forEach(function(x){ if(!x.hide){var nb=buildInput(x);nb.style.left=((x.col-c.col)*40-8)+'px';d.appendChild(nb);} });
       }
     }
-    if(c.dot){var dm=document.createElement('span');dm.className='dotmark'+(c.g==='f'?' dlow':'');dm.textContent='.';d.appendChild(dm);}
+    if(c.dot){
+      if(c.ansDot){
+        var fDone=cells.every(function(x){return x.g!==c.g||!x.in||x.value===x.exp;});
+        if(fDone){var dm=document.createElement('span');dm.className='dotmark dlow'+(c.dotShown?'':' go');dm.textContent='.';d.appendChild(dm);c.dotShown=true;}
+        else{c.dotShown=false;}
+      }else{var dm2=document.createElement('span');dm2.className='dotmark';dm2.textContent='.';d.appendChild(dm2);}
+    }
     g.appendChild(d);
   });
   document.getElementById('mtitle').textContent=ds+' 的乘法表';
