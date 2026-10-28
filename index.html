@@ -154,7 +154,7 @@ function gen(dividend,divisor){
     var carry=0,notes=[];
     for(var t=0;t<sA.length;t++){
       var cin=carry,dg=+sA[sA.length-1-t],s=d*dg+cin,w=s%10,cOut=(s-w)/10;
-      if(t<sA.length-1&&cOut>0)notes.push({t:t,col:R-shift-t-1,val:String(cOut),
+      if(t<sA.length-1&&cOut>0)notes.push({t:t,col:(k===0?R-t:R-shift-t-1),val:String(cOut),
         tip:'提示：記數，'+d+'×'+dg+(cin>0?'+'+cin:'')+'='+s+'，進位 '+cOut+'（細字記喺上面）'});
       carry=cOut;
     }
@@ -219,7 +219,7 @@ function buildInput(c){
   inp.oninput=function(e){var v=e.target.value;if(!/^\d?$/.test(v)){e.target.value='';return;}c.value=v;check(curTotal,curDv,curDs);};
   inp.onfocus=function(){
     var found=false;
-    cells.forEach(function(x){if(x.carry&&x.hide&&x.row===c.row-1&&x.col===c.col-1){x.hide=false;x.pop=true;if(mode==='calc')x.value=x.exp;found=true;}});
+    cells.forEach(function(x){if(x.carry&&x.hide&&x.row===c.row-1&&(x.col===c.col-1||(x.g&&x.g.indexOf('n0')===0&&x.col===c.col))){x.hide=false;x.pop=true;if(mode==='calc')x.value=x.exp;found=true;}});
     if(found){render(curTotal,curDv,curDs);
       if(document.querySelector){var el=document.querySelector('input[data-id="'+c.id+'"]');if(el)el.focus({preventScroll:true});}
     }
@@ -242,7 +242,7 @@ function render(total,dv,ds){
       else{
         d.classList.add('hasguest');
         d.textContent=c.value;
-        guests.forEach(function(x){ if(!x.hide)d.appendChild(buildInput(x)); });
+        guests.forEach(function(x){ if(!x.hide){var nb=buildInput(x);nb.style.left=((x.col-c.col)*40-8)+'px';d.appendChild(nb);} });
       }
     }
     g.appendChild(d);
@@ -285,7 +285,8 @@ function check(total,dv,ds){
   if(mode==='exam'&&locked)return;
   cells.forEach(function(c){
     if(c.carry&&c.hide){
-      var src=cells.find(function(x){return x.in&&!x.carry&&x.row===c.row+1&&x.col===c.col+1;});
+      var scol=(c.g&&c.g.indexOf('n0')===0)?c.col:c.col+1;
+      var src=cells.find(function(x){return x.in&&!x.carry&&x.row===c.row+1&&x.col===scol;});
       if(src&&src.value===src.exp){c.hide=false;c.pop=true;}
     }
   });
